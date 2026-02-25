@@ -5,7 +5,7 @@ export default authMiddleware({
   // Redirect unauthenticated users to login
   redirectUrl: "/login",
   // These paths are accessible without authentication
-  publicRoutes: ["/", "/login", "/api/auth/(.*)"],
+  publicRoutes: ["/", "/login", "/api/auth/(.*)", "/api/stocks(.*)", "/api/news(.*)"],
 });
 
 export const config = {

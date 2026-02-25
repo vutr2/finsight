@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Descope } from "@descope/nextjs-sdk";
-import { useRouter } from "next/navigation";
+import { Descope } from '@descope/nextjs-sdk';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,9 +15,9 @@ export default function LoginPage() {
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <Descope
-            flowId="sign-up-or-in"
-            onSuccess={() => router.push("/dashboard")}
-            onError={(err) => console.error("Descope login error:", err)}
+            flowId="sign-up-or-in-passwords-or-social"
+            onSuccess={() => router.push('/dashboard')}
+            onError={(err) => console.error('Descope login error:', err)}
           />
         </div>
       </div>
