@@ -36,8 +36,15 @@ export async function GET(request) {
       .single();
 
     if (payment?.descope_id) {
-      await grantPro(payment.descope_id);
-      console.log('[vnpay/callback] granted Pro to:', payment.descope_id);
+      // Descope management API requires loginId = email, not the internal user ID
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('email')
+        .eq('descope_id', payment.descope_id)
+        .single();
+      const loginId = userRow?.email ?? payment.descope_id;
+      await grantPro(loginId);
+      console.log('[vnpay/callback] granted Pro to:', loginId);
     } else {
       console.warn('[vnpay/callback] no descope_id found for orderId:', orderId);
     }

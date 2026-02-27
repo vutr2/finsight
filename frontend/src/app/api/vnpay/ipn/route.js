@@ -61,8 +61,17 @@ async function handleIpn(query) {
   try {
     const descopeId = await getDescopeIdByOrderId(orderId);
     if (descopeId) {
-      await grantPro(descopeId);
-      console.log('[vnpay/ipn] granted Pro to:', descopeId);
+      // Descope management API requires loginId = email, not the internal user ID
+      const { getSupabase } = await import('@/lib/supabase/server');
+      const supabase = getSupabase();
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('email')
+        .eq('descope_id', descopeId)
+        .single();
+      const loginId = userRow?.email ?? descopeId;
+      await grantPro(loginId);
+      console.log('[vnpay/ipn] granted Pro to:', loginId);
     } else {
       console.warn('[vnpay/ipn] no descope_id found for orderId:', orderId);
     }
