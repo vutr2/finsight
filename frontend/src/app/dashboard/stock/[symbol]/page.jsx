@@ -8,19 +8,6 @@ import dynamic from 'next/dynamic';
 
 const CandlestickChart = dynamic(() => import('@/components/charts/CandlestickChart'), { ssr: false });
 
-function StatBox({ label, value, color }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {label}
-      </span>
-      <span className="font-mono" style={{ fontSize: '14px', fontWeight: 600, color: color ?? 'var(--text-primary)' }}>
-        {value ?? '—'}
-      </span>
-    </div>
-  );
-}
-
 export default function StockPage({ params }) {
   const { symbol } = use(params);
   const sym = symbol.toUpperCase();
@@ -28,17 +15,13 @@ export default function StockPage({ params }) {
   const [modal, setModal] = useState(null);
   const { cash, trading, buy, sell, getHolding } = usePortfolio();
   const holding = getHolding(sym);
-  // useHistory chỉ dùng cho stats (fallback khi market data chưa có)
   const { data: history } = useHistory(sym, 1);
   const { data: market } = useMarket(30000);
 
   const quote = market.find((s) => s.symbol === sym) ?? null;
 
-  const price  = quote?.price  ?? history.at(-1)?.close ?? null;
-  const open   = quote?.open   ?? history.at(-1)?.open  ?? null;
-  const high   = quote?.high   ?? history.at(-1)?.high  ?? null;
-  const low    = quote?.low    ?? history.at(-1)?.low   ?? null;
-  const volume = quote?.volume ?? history.at(-1)?.volume ?? null;
+  const price = quote?.price ?? history.at(-1)?.close ?? null;
+  const open  = quote?.open  ?? history.at(-1)?.open  ?? null;
 
   const change = open && price ? ((price - open) / open) * 100 : null;
   const isUp = change > 0;
@@ -49,12 +32,6 @@ export default function StockPage({ params }) {
     : 'var(--neutral)';
 
   const fmt = (n) => (n != null ? n.toLocaleString('vi-VN') : '—');
-  const fmtVol = (n) => {
-    if (n == null) return '—';
-    if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
-    if (n >= 1_000) return (n / 1_000).toFixed(0) + 'K';
-    return n.toLocaleString('vi-VN');
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1100px' }}>
@@ -83,24 +60,9 @@ export default function StockPage({ params }) {
         </div>
       </div>
 
-      {/* Chart — range selector nằm bên trong CandlestickChart */}
+      {/* Chart — stats grid is built into the chart component */}
       <div className="card" style={{ overflow: 'hidden' }}>
-        <CandlestickChart symbol={sym} height={380} />
-      </div>
-
-      {/* Key stats */}
-      <div className="card" style={{ padding: '20px 24px' }}>
-        <p style={{ fontSize: '13px', fontWeight: 600, marginBottom: '16px', color: 'var(--text-secondary)' }}>
-          Thông tin phiên giao dịch
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '20px' }}>
-          <StatBox label="Giá mở cửa" value={fmt(open)} />
-          <StatBox label="Cao nhất"   value={fmt(high)}   color="var(--bull)" />
-          <StatBox label="Thấp nhất"  value={fmt(low)}    color="var(--bear)" />
-          <StatBox label="Khối lượng" value={fmtVol(volume)} />
-          {quote?.ceiling != null && <StatBox label="Trần" value={fmt(quote.ceiling)} color="var(--bull)" />}
-          {quote?.floor   != null && <StatBox label="Sàn"  value={fmt(quote.floor)}   color="var(--bear)" />}
-        </div>
+        <CandlestickChart symbol={sym} height={320} quote={quote} />
       </div>
 
       {/* Trade buttons */}

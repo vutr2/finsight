@@ -1,8 +1,9 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function PaymentFailedPage() {
+function FailedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const reason = searchParams.get('reason');
@@ -25,12 +26,12 @@ export default function PaymentFailedPage() {
         }}>✕</div>
 
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px' }}>
-          Thanh toan khong thanh cong
+          Thanh toán không thành công
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>
           {reason === 'invalid'
-            ? 'Chu ky giao dich khong hop le. Neu ban da bi tru tien, vui long lien he ho tro.'
-            : 'Giao dich bi huy hoac that bai. Ban co the thu lai bat ky luc nao.'}
+            ? 'Chữ ký giao dịch không hợp lệ. Nếu bạn đã bị trừ tiền, vui lòng liên hệ hỗ trợ.'
+            : 'Giao dịch bị hủy hoặc thất bại. Bạn có thể thử lại bất kỳ lúc nào.'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -45,7 +46,7 @@ export default function PaymentFailedPage() {
             onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
-            Thu lai
+            Thử lại
           </button>
           <button
             onClick={() => router.push('/dashboard')}
@@ -59,10 +60,18 @@ export default function PaymentFailedPage() {
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elevated)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
-            Ve Dashboard
+            Về Dashboard
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentFailedPage() {
+  return (
+    <Suspense>
+      <FailedContent />
+    </Suspense>
   );
 }

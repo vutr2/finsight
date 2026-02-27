@@ -70,6 +70,16 @@ const RESOURCES = [
     duration: null,
     level: 'Cơ bản',
   },
+  {
+    category: 'beginner',
+    type: 'video',
+    title: 'Cổ phiếu, trái phiếu, quỹ ETF khác nhau như thế nào?',
+    channel: 'YouTube',
+    youtubeId: 'p7HKvqRI_Bo',
+    url: 'https://www.youtube.com/watch?v=p7HKvqRI_Bo',
+    duration: null,
+    level: 'Mới bắt đầu',
+  },
 
   // ── Phân tích kỹ thuật ──
   {
@@ -112,6 +122,26 @@ const RESOURCES = [
     duration: null,
     level: 'Nâng cao',
   },
+  {
+    category: 'technical',
+    type: 'video',
+    title: 'Bollinger Bands — Sử dụng chỉ báo kết hợp sức mạnh thị trường',
+    channel: 'YouTube',
+    youtubeId: 'nhw7z90Hvak',
+    url: 'https://www.youtube.com/watch?v=nhw7z90Hvak',
+    duration: null,
+    level: 'Trung cấp',
+  },
+  {
+    category: 'technical',
+    type: 'video',
+    title: 'Bollinger Bands — Cách sử dụng hiệu quả trong giao dịch',
+    channel: 'YouTube',
+    youtubeId: 'EGcJ_mmP0_Q',
+    url: 'https://www.youtube.com/watch?v=EGcJ_mmP0_Q',
+    duration: null,
+    level: 'Trung cấp',
+  },
 
   // ── Phân tích cơ bản ──
   {
@@ -151,6 +181,16 @@ const RESOURCES = [
     channel: 'YouTube',
     youtubeId: 'dyM2AwQjOik',
     url: 'https://www.youtube.com/watch?v=dyM2AwQjOik',
+    duration: null,
+    level: 'Nâng cao',
+  },
+  {
+    category: 'fundamental',
+    type: 'video',
+    title: 'Phân tích vĩ mô và tác động đến thị trường chứng khoán',
+    channel: 'YouTube',
+    youtubeId: 'PHe0bXAIuk0',
+    url: 'https://www.youtube.com/watch?v=PHe0bXAIuk0',
     duration: null,
     level: 'Nâng cao',
   },

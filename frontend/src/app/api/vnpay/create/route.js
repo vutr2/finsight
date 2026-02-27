@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createPaymentUrl } from '@/lib/vnpay';
 import { createPayment, getUserByDescopeId } from '@/lib/supabase';
+import { validateEnv } from '@/lib/validateEnv';
 
 export async function POST(request) {
   try {
+    validateEnv();
     const body = await request.json();
     const { amount, planId, userId, cycle } = body;
 
@@ -33,10 +35,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid Cycle' }, { status: 400 });
     }
 
-    const orderId = Date.now().toString().slice(-8);
+    // Use full timestamp for uniqueness (vnp_TxnRef max 100 chars, alphanumeric)
+    const orderId = Date.now().toString();
 
     const forwardedFor = request.headers.get('x-forwarded-for');
-    const ipAddr = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
+    const rawIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
+    // Normalize IPv6 loopback to IPv4 (VNPAY rejects ::1)
+    const ipAddr = (rawIp === '::1' || rawIp === '::ffff:127.0.0.1') ? '127.0.0.1' : rawIp;
 
     const orderInfo = `Thanh toan goi ${planId}`;
 

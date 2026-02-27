@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyReturnUrl } from '@/lib/vnpay';
+import { updatePaymentStatus } from '@/lib/supabase';
 
 // VNPAY server calls this URL server-to-server to confirm payment.
 // This is the ONLY place we update the database.
@@ -13,7 +14,6 @@ export async function GET(request) {
 export async function POST(request) {
   const { searchParams } = new URL(request.url);
   const query = Object.fromEntries(searchParams.entries());
-  // Also try body params
   try {
     const text = await request.text();
     if (text) {
@@ -33,27 +33,40 @@ async function handleIpn(query) {
   }
 
   const responseCode = query['vnp_ResponseCode'];
-  const orderInfo = query['vnp_OrderInfo'] ?? '';
+  const txnRef = query['vnp_TxnRef'] ?? '';
   const amount = Number(query['vnp_Amount']) / 100;
+  // orderId was set as Date.now().toString().slice(-8) in create route
+  // txnRef is the same value used as orderId
+  const orderId = txnRef;
 
-  console.log(`[vnpay/ipn] responseCode=${responseCode} amount=${amount} orderInfo=${orderInfo}`);
+  console.log(`[vnpay/ipn] responseCode=${responseCode} amount=${amount} orderId=${orderId}`);
 
   if (responseCode !== '00') {
+    // Update payment status to failed in Supabase
+    try { await updatePaymentStatus(orderId, 'failed'); } catch { /* non-blocking */ }
     return NextResponse.json({ RspCode: '00', Message: 'Confirm Success' });
   }
 
-  // orderInfo format: "Nang cap Pro {userId} {safeEmail}"
-  const parts = orderInfo.split(' ');
-  const userId = parts[3] ?? null;
-
-  if (!userId) {
-    console.error('[vnpay/ipn] cannot extract userId from:', orderInfo);
-    return NextResponse.json({ RspCode: '01', Message: 'Order not found' });
+  // 1. Update payment status to completed in Supabase
+  try {
+    await updatePaymentStatus(orderId, 'completed');
+    console.log('[vnpay/ipn] payment status updated to completed for orderId:', orderId);
+  } catch (err) {
+    console.error('[vnpay/ipn] updatePaymentStatus error:', err.message);
+    // Non-blocking — still grant Pro
   }
 
+  // 2. Grant Pro in Descope
+  // userId is encoded in vnp_OrderInfo as "Thanh toan goi {planId}" — but we need userId
+  // userId was stored in the payments table, look it up by orderId
   try {
-    await grantPro(userId);
-    console.log('[vnpay/ipn] granted Pro to:', userId);
+    const userId = await getUserIdByOrderId(orderId);
+    if (userId) {
+      await grantPro(userId);
+      console.log('[vnpay/ipn] granted Pro to userId:', userId);
+    } else {
+      console.warn('[vnpay/ipn] no userId found for orderId:', orderId);
+    }
   } catch (err) {
     console.error('[vnpay/ipn] grantPro error:', err.message);
     return NextResponse.json({ RspCode: '99', Message: 'Unknown error' });
@@ -62,12 +75,35 @@ async function handleIpn(query) {
   return NextResponse.json({ RspCode: '00', Message: 'Confirm Success' });
 }
 
-async function grantPro(userId) {
+async function getUserIdByOrderId(orderId) {
+  const { getSupabase } = await import('@/lib/supabase/server');
+  const supabase = getSupabase();
+
+  // Step 1: get user_id (UUID) from payment
+  const { data: payment } = await supabase
+    .from('payments')
+    .select('user_id')
+    .eq('order_id', orderId)
+    .single();
+
+  if (!payment?.user_id) return null;
+
+  // Step 2: get descope_id from users table
+  const { data: user } = await supabase
+    .from('users')
+    .select('descope_id')
+    .eq('id', payment.user_id)
+    .single();
+
+  return user?.descope_id ?? null;
+}
+
+async function grantPro(descopeId) {
   const projectId = process.env.NEXT_PUBLIC_DESCOPE_PROJECT_ID;
   const managementKey = process.env.DESCOPE_MANAGEMENT_KEY;
 
   if (!managementKey) {
-    console.warn('[grantPro] DESCOPE_MANAGEMENT_KEY not set');
+    console.warn('[grantPro] DESCOPE_MANAGEMENT_KEY not set — skipping Descope update');
     return;
   }
 
@@ -78,7 +114,7 @@ async function grantPro(userId) {
       Authorization: `Bearer ${projectId}:${managementKey}`,
     },
     body: JSON.stringify({
-      loginId: userId,
+      loginId: descopeId,
       attributeKey: 'plan',
       attributeValue: 'pro',
     }),

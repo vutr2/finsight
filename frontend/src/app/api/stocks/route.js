@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getOHLC, getLatestPrice, getMarketPrices, getHistory } from '@/lib/stocks/vnstock';
 
+// Never cache this route — each request must fetch fresh data
+export const dynamic = 'force-dynamic';
+
 // GET /api/stocks?type=market              → full market (VPS, trading hours) or fallback
 // GET /api/stocks?type=prices&symbols=...  → specific symbols
 // GET /api/stocks?type=quote&symbol=VNM    → single symbol
